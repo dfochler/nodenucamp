@@ -1,13 +1,21 @@
 const express = require('express');
-const bodyParser = require('body-parser');
+
+//--middleware to extract JSON object. POST request => key: value
+//const bodyParser = require('body-parser');
+ 
+//schema 
 const Campsite = require('../models/campsite');
 
-const campsiteRouter = express.Router();
+//--gives access to express routing methods to create URLs and handle http requests
+const campsiteRouter = express.Router(); 
 
 campsiteRouter.use(bodyParser.json());
 
-campsiteRouter.route('/')
+campsiteRouter.route('/') //ENDPOINTS
+//Mongoose methods will always return a promise *daisy chain then catch methods
 .get((req, res, next) => {
+    
+   //Query DB and return documents as objects 
     Campsite.find()
     .then(campsites => {
         res.statusCode = 200;
@@ -40,7 +48,7 @@ campsiteRouter.route('/')
     .catch(err => next(err));
 });
 
-campsiteRouter.route('/:campsiteId')
+campsiteRouter.route('/:campsiteId') //URL parameter
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
@@ -122,6 +130,7 @@ campsiteRouter.route('/:campsiteId/comments')
             for (let i = (campsite.comments.length-1); i >= 0; i--) {
                 campsite.comments.id(campsite.comments[i]._id).remove();
             }
+            //campsite.comments is the array of sub documents (from campsiteSchema field)
             campsite.save()
             .then(campsite => {
                 res.statusCode = 200;

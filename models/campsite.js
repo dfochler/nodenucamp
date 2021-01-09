@@ -1,9 +1,10 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose');//import middleware
+const Schema = mongoose.Schema; //short-handing to Schema var
 
 
-require('mongoose-currency').loadType(mongoose);
-const Currency = mongoose.Types.Currency;
+require('mongoose-currency').loadType(mongoose); //Defining schema type for currency
+const Currency = mongoose.Types.Currency; //using currency middleware
+
 
 const commentSchema = new Schema({
     rating: {
@@ -24,11 +25,14 @@ const commentSchema = new Schema({
     timestamps: true
 });
 
+
+// Declaring new schema. * Blueprint of documents. Predefine fields of doc. 
 const campsiteSchema = new Schema({
+        //JSON object is a key/value pair
     name: {
         type: String,
-        required: true,
-        unique: true
+        required: true, //Post request must contain a string for name
+        unique: true  //Post request name string can't be same as name of another doc
     },
     description: {
         type: String,
@@ -51,11 +55,16 @@ const campsiteSchema = new Schema({
         type: Boolean,
         default: false
     },
-    comments: [commentSchema]
+    //sub document. commentSchema is being stored as an array because of one-to-many 
+    //relationship. Schema will contain many comments. 
+    comments: [commentSchema] 
 }, {
-    timestamps: true
+    timestamps: true //will automatically create or update timestamps.
+                        //CreatedAt: and UpdatedAt: field
 });
 
+//assign schema to collection for creating new instances 
+  //const campsite =  new Campsite({name: '', description: ''})
 const Campsite = mongoose.model('Campsite', campsiteSchema);
 
 module.exports = Campsite;
