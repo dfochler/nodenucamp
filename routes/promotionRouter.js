@@ -4,7 +4,7 @@ const Promotion = require('../models/promotion');
 
 const promotionRouter = express.Router();
 
-//promotionRouter.use(bodyParser.json());
+promotionRouter.use(bodyParser.json());
 
 promotionRouter
   .route("/")
