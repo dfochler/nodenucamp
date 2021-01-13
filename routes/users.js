@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/user');
+const passport = require('passport');
 
 const router = express.Router();
 
@@ -8,33 +9,40 @@ router.get('/', function(req, res, next) {
   res.send('respond with a resource');
 });
 
-router.post('/signup', (req, res, next) => { //signup - allows new user to register
-  User.findOne({username: req.body.username}) //checks for existing user name docs
-  .then(user => {
-      if (user) {
-          const err = new Error(`User ${req.body.username} already exists!`);
-          err.status = 403;
-          return next(err);
-      } else {
-          User.create({
-              username: req.body.username,
-              password: req.body.password})
-          .then(user => {
-              res.statusCode = 200;
+router.post('/signup', (req, res) => { 
+  User.register(  //call as static method on user model
+      new User({username: req.body.username}), //1st argument
+      req.body.password, //2nd argument
+      err => { //3rd argument
+          if (err) {
+              res.statusCode = 500; //internal server error
               res.setHeader('Content-Type', 'application/json');
-              res.json({status: 'Registration Successful!', user: user}); //user: user is representation of user doc
-          })
-          .catch(err => next(err));
+              res.json({err: err}); //info about err from this property on the err object
+          } else {
+              passport.authenticate('local')(req, res, () => { //authenticate method calls function
+                  res.statusCode = 200;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.json({success: true, status: 'Registration Successful!'});
+              });
+          }
       }
-  })
-  .catch(err => next(err));
+  );
 });
 
+//enable passport authentication on this route. handles logging in user(challenging and parsing credentials) and errors
+router.post('/login', passport.authenticate('local'), (req, res) => {
+  //only need to handle response if successful
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.json({success: true, status: 'You are successfully logged in!'});
+});
+
+
 router.post('/login', (req, res, next) => {
-  if(!req.session.user) {
+  if(!req.session.user) { // no session open - look for cookie
       const authHeader = req.headers.authorization;
 
-      if (!authHeader) {
+      if (!authHeader) { // no cookie :(
           const err = new Error('You are not authenticated!');
           res.setHeader('WWW-Authenticate', 'Basic');
           err.status = 401;
@@ -45,7 +53,7 @@ router.post('/login', (req, res, next) => {
       const username = auth[0];
       const password = auth[1];
     
-      User.findOne({username: username})
+      User.findOne({username: username}) //find doc with matching username
       .then(user => {
           if (!user) {
               const err = new Error(`User ${username} does not exist!`);
@@ -56,7 +64,7 @@ router.post('/login', (req, res, next) => {
               err.status = 401;
               return next(err);
           } else if (user.username === username && user.password === password) {
-              req.session.user = 'authenticated'; // used in app.js
+              req.session.user = 'authenticated'; // used in app.js auth function
               res.statusCode = 200;
               res.setHeader('Content-Type', 'text/plain');
               res.end('You are authenticated!')

@@ -6,6 +6,9 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);//first class function- 2nd function return value called immediately
+const passport = require('passport');
+const authenticate = require('./authenticate'); //internal file 
+
 
 //----Import routers from working directory-------------
 var indexRouter = require('./routes/index');
@@ -54,25 +57,23 @@ app.use(session({
   store: new FileStore() // object to save info on servers hard disk
 }));
 
+//after session middleware set up/ check incoming request for existing session/ session data loaded into request as req.user
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter); //placing before allows unregister/not logged in user to access
 app.use('/users', usersRouter);
 
 //authentication before next middleware 
 function auth(req, res, next) {
-  console.log(req.session);
+  console.log(req.user);
   
-  if (!req.session.user) { //generating cookie for use in session will be handled by middleware
+  if (!req.user) { 
           const err = new Error('You are not authenticated!');
           err.status = 401;
           return next(err);
     } else {
-        if (req.session.user === 'authenticated') { // set in user router when logging in
             return next();
-        } else {
-            const err = new Error('You are not authenticated!');
-            err.status = 401;
-            return next(err);
-        }
     }
 }
 
