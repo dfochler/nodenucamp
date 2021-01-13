@@ -4,6 +4,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const session = require('express-session');
+const FileStore = require('session-file-store')(session);//first class function- 2nd function return value called immediately
 
 //----Import routers from working directory-------------
 var indexRouter = require('./routes/index');
@@ -41,11 +43,21 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('1234-5654-7654'));
+//app.use(cookieParser('1234-5654-7654')); using cookie with session can cause errors
+
+//setting middleware
+app.use(session({
+  name: 'session-id',
+  secret: '1234-5654-7654',
+  saveUninitialized: false,//won't save sessions without updates
+  resave: false,// keep session marked as active 
+  store: new FileStore() // object to save info on servers hard disk
+}));
 
 //authentication before next middleware 
 function auth(req, res, next) {
-  if (!req.signedCookies.user) {
+  console.log(req.session);
+  if (!req.session.user) { //generating cookie for use in session will be handled by middleware
       const authHeader = req.headers.authorization;
       if (!authHeader) {
           const err = new Error('You are not authenticated!');
@@ -59,7 +71,7 @@ function auth(req, res, next) {
       const user = auth[0];
       const pass = auth[1];
       if (user === 'admin' && pass === 'password') {
-        res.cookie('user', 'admin', {signed: true});
+          req.session.user = 'admin';
           return next(); // authorized
       } else {
           const err = new Error('You are not authenticated!');
@@ -68,7 +80,7 @@ function auth(req, res, next) {
           return next(err);
       } 
     } else {
-        if (req.signedCookies.user === 'admin') {
+        if (req.session.user === 'admin') {
             return next();
         } else {
             const err = new Error('You are not authenticated!');
