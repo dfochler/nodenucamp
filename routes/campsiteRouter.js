@@ -20,6 +20,7 @@ campsiteRouter.route('/') //ENDPOINTS
     })
     .catch(err => next(err));//passes err to built in express handling
 })
+//authenticate.js functions verifyUser returns req.user object then checks it for admin prop
 .post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.create(req.body)
     .then(campsite => {
@@ -126,6 +127,7 @@ campsiteRouter.route('/:campsiteId/comments')
     res.statusCode = 403;
     res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
 })
+//only admins to delete all comments
 .delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
@@ -179,22 +181,31 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
 .put(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
-        //check if campsite and is sending a true comment.id/timestamp
+        //check if req is campsite and a comment on that campsite. comment.id/timestamp matches
         if (campsite && campsite.comments.id(req.params.commentId)) {
-            //double if,  !else : checks both. Can update both, either, or neither
-            if (req.body.rating) {
-                campsite.comments.id(req.params.commentId).rating = req.body.rating;
+            //check that author's objectId of req campsite/''/comment/'' matches id of the user requesting it
+            if (campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
+            /*double if,  !else : checks both. Can update both, either, or neither.
+                if body of request contains text in either property, update to its value*/
+                if (req.body.rating) {
+                    campsite.comments.id(req.params.commentId).rating = req.body.rating;
+                }
+                if (req.body.text) {
+                    campsite.comments.id(req.params.commentId).text = req.body.text;
+                }
+                //save updated and send back
+                campsite.save()
+                .then(campsite => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(campsite);
+                })
+                .catch(err => next(err));
+            } else {
+                const err = new Error('You are not authorized to perform this operation!');
+                err.status = 403;
+                return next(err);
             }
-            if (req.body.text) {
-                campsite.comments.id(req.params.commentId).text = req.body.text;
-            }
-            campsite.save()
-            .then(campsite => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(campsite);
-            })
-            .catch(err => next(err));
         } else if (!campsite) {
             err = new Error(`Campsite ${req.params.campsiteId} not found`);
             err.status = 404;
@@ -210,15 +221,24 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
 .delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
+        //check that req campsite and comment exist
         if (campsite && campsite.comments.id(req.params.commentId)) {
-            campsite.comments.id(req.params.commentId).remove();
-            campsite.save()
-            .then(campsite => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(campsite);
-            })
-            .catch(err => next(err));
+            //check that requesting user id matches comments author id(objectId)
+            if (campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
+                campsite.comments.id(req.params.commentId).remove();
+                //save deletion and send back deleted campsite comment
+                campsite.save()
+                .then(campsite => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(campsite);
+                })
+                .catch(err => next(err));
+            } else {
+                const err = new Error('You are not authorized to perform this operation!');
+                err.status = 403;
+                return next(err);
+            }
         } else if (!campsite) {
             err = new Error(`Campsite ${req.params.campsiteId} not found`);
             err.status = 404;

@@ -5,11 +5,11 @@ const authenticate = require('../authenticate');
 
 const router = express.Router();
 
-/* GET users listing. */
+/* Verify an admin user to allow retrieval of users listing at /users endpoint */
 router
 .get('/', authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
-    User.find()
-    .then(users => {
+    User.find() //find all user docs
+    .then(users => { // and send them in response
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json(users);
@@ -17,6 +17,7 @@ router
     .catch(err => next(err));
 })
 
+//allow anyone to access /users/signup endpoint
 router.post('/signup', (req, res) => { 
   User.register(  //call as static method on user model
       new User({username: req.body.username}), //1st argument
@@ -61,8 +62,23 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 }); //token will now be in header of subsequent request from client
 
+router.get('/logout', (req, res, next) => {
+    if (req.session) { //if session exists
+        req.session.destroy();
+        res.clearCookie('session-id');
+        res.redirect('/');
+    } else {
+        const err = new Error('You are not logged in!');
+        err.status = 401;
+        return next(err);
+    }
+  });
+  
+  module.exports = router;
 
-/*router.post('/login', (req, res, next) => {
+
+/* authenticating with sessions or cookies
+router.post('/login', (req, res, next) => {
   if(!req.session.user) { // no session open - look for cookie
       const authHeader = req.headers.authorization;
 
@@ -102,17 +118,5 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   }
 });*/
 
-router.get('/logout', (req, res, next) => {
-  if (req.session) { //if session exists
-      req.session.destroy();
-      res.clearCookie('session-id');
-      res.redirect('/');
-  } else {
-      const err = new Error('You are not logged in!');
-      err.status = 401;
-      return next(err);
-  }
-});
 
-module.exports = router;
 
