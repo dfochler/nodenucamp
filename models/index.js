@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+/*const mongoose = require('mongoose');
 const Campsite = require('./models/campsite');
 const Partner = require('./models/partner');
 const Promotion = require('./models/promotion');
@@ -14,7 +14,7 @@ const connect = mongoose.connect(url, {
 
 connect.then(() => {
 
-    console.log('Connected correctly to server');
+    console.log('Connected correctly to the server');
 
     Campsite.create({
         name: 'React Lake Campground',
@@ -113,3 +113,4 @@ connect.then(() => {
         mongoose.connection.close();
     });
 });
+*/

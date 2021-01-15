@@ -2,12 +2,9 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-const session = require('express-session');
-const FileStore = require('session-file-store')(session);//first class function- 2nd function return value called immediately
 const passport = require('passport');
-const authenticate = require('./authenticate'); //internal file 
+const config = require('./config'); //file made in folder
 
 
 //----Import routers from working directory-------------
@@ -24,7 +21,7 @@ var app = express();
 const mongoose = require('mongoose');
 
 //----Database----
-const url = 'mongodb://localhost:27017/nucampsite';
+const url = config.mongoUrl;//set up in config file
 const connect = mongoose.connect(url, {
     useCreateIndex: true,
     useFindAndModify: false,
@@ -48,38 +45,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 //app.use(cookieParser('1234-5654-7654')); using cookie with session can cause errors
 
-//setting middleware
-app.use(session({
-  name: 'session-id',
-  secret: '1234-5654-7654',
-  saveUninitialized: false,//won't save sessions without updates
-  resave: false,// keep session marked as active 
-  store: new FileStore() // object to save info on servers hard disk
-}));
 
-//after session middleware set up/ check incoming request for existing session/ session data loaded into request as req.user
+
 app.use(passport.initialize());
-app.use(passport.session());
 
-app.use('/', indexRouter); //placing before allows unregister/not logged in user to access
+
+app.use('/', indexRouter); //placing before auth middleware allows unregister/not logged in user to access
 app.use('/users', usersRouter);
 
-//authentication before next middleware 
-function auth(req, res, next) {
-  console.log(req.user);
-  
-  if (!req.user) { 
-          const err = new Error('You are not authenticated!');
-          err.status = 401;
-          return next(err);
-    } else {
-            return next();
-    }
-}
 
-app.use(auth);
-
-//first of middleware functions sending back to client -- authenticate prior
 app.use(express.static(path.join(__dirname, 'public')));
 
 
