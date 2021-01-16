@@ -46,7 +46,7 @@ app.use(express.urlencoded({ extended: false }));
 //app.use(cookieParser('1234-5654-7654')); using cookie with session can cause errors
 
 
-
+//tell express to use passport
 app.use(passport.initialize());
 
 

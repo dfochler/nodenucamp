@@ -19,7 +19,7 @@ router
 
 //allow anyone to access /users/signup endpoint
 router.post('/signup', (req, res) => { 
-  User.register(  //call as static method on user model
+  User.register(  //call as static method on user model-passport local mongoose
       new User({username: req.body.username}), //1st argument
       req.body.password, //2nd argument
       (err, user) => { //3rd argument
@@ -41,7 +41,8 @@ router.post('/signup', (req, res) => {
                       res.json({err: err});//err prop of err object
                       return;
                   }
-                  passport.authenticate('local')(req, res, () => { //authenticate method calls function
+                  //authenticate method calls function. set here as the second param
+                  passport.authenticate('local')(req, res, () => { 
                       res.statusCode = 200;
                       res.setHeader('Content-Type', 'application/json');
                       res.json({success: true, status: 'Registration Successful!'});
@@ -59,19 +60,13 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   const token = authenticate.getToken({_id: req.user._id}); //then add token prop to response object for client
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
+  //res.cookie("cookiejwt", token) //send cookie with jwt to client
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 }); //token will now be in header of subsequent request from client
 
 router.get('/logout', (req, res, next) => {
-    if (req.session) { //if session exists
-        req.session.destroy();
-        res.clearCookie('session-id');
-        res.redirect('/');
-    } else {
-        const err = new Error('You are not logged in!');
-        err.status = 401;
-        return next(err);
-    }
+    res.clearCookie('cookiejwt');
+    res.redirect('/');
   });
   
   module.exports = router;
@@ -116,7 +111,24 @@ router.post('/login', (req, res, next) => {
       res.setHeader('Content-Type', 'text/plain');
       res.end('You are already authenticated!');
   }
+});
+
+
+router.get('/logout', (req, res, next) => {
+    res.clearCookie('cookiejwt');
+    res.redirect('/')
+    /*if (req.session) { //if session exists
+        req.session.destroy();
+        res.clearCookie('session-id');
+        res.redirect('/');
+    } else {
+        const err = new Error('You are not logged in!');
+        err.status = 401;
+        return next(err);
+    }
 });*/
+
+
 
 
 

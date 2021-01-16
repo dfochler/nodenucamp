@@ -12,7 +12,7 @@ campsiteRouter.route('/') //ENDPOINTS
    //Query DB and return documents as objects 
     Campsite.find()
     .populate('comments.author')//operation to populate campsites' docs' author field of 
-                                //comment sub document by finding user doc that matches the object id stored there
+                                //comment sub document by finding user doc (ref:User) that matches the object id stored there
     .then(campsites => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -182,9 +182,8 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         //check if req is campsite and a comment on that campsite. comment.id/timestamp matches
-        if (campsite && campsite.comments.id(req.params.commentId)) {
+        if (campsite && campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
             //check that author's objectId of req campsite/''/comment/'' matches id of the user requesting it
-            if (campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
             /*double if,  !else : checks both. Can update both, either, or neither.
                 if body of request contains text in either property, update to its value*/
                 if (req.body.rating) {
@@ -201,11 +200,10 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
                     res.json(campsite);
                 })
                 .catch(err => next(err));
-            } else {
+        } else if (!campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
                 const err = new Error('You are not authorized to perform this operation!');
                 err.status = 403;
                 return next(err);
-            }
         } else if (!campsite) {
             err = new Error(`Campsite ${req.params.campsiteId} not found`);
             err.status = 404;
@@ -221,11 +219,10 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
 .delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
-        //check that req campsite and comment exist
-        if (campsite && campsite.comments.id(req.params.commentId)) {
-            //check that requesting user id matches comments author id(objectId)
-            if (campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
-                campsite.comments.id(req.params.commentId).remove();
+        //check that req campsite and comment exist and that
+        //check that requesting user id matches comments author id(objectId)
+        if (campsite && campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
+            campsite.comments.id(req.params.commentId).remove();
                 //save deletion and send back deleted campsite comment
                 campsite.save()
                 .then(campsite => {
@@ -234,11 +231,10 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
                     res.json(campsite);
                 })
                 .catch(err => next(err));
-            } else {
+        }else if (!campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
                 const err = new Error('You are not authorized to perform this operation!');
                 err.status = 403;
                 return next(err);
-            }
         } else if (!campsite) {
             err = new Error(`Campsite ${req.params.campsiteId} not found`);
             err.status = 404;
