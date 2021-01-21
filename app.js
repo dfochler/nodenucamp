@@ -2,6 +2,7 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
+const cookieParser = require('cookie-parser')
 var logger = require('morgan');
 const passport = require('passport');
 const config = require('./config'); //file made in folder
@@ -14,8 +15,6 @@ var campsiteRouter = require('./routes/campsiteRouter');
 var promotionRouter = require('./routes/promotionRouter');
 var partnerRouter = require('./routes/partnerRouter');
 
-//-----Using express middleware framework-----
-var app = express();
 
 //---Structure for DB and querying the DB, all http verb requests
 const mongoose = require('mongoose');
@@ -33,7 +32,19 @@ connect.then(() => console.log('Connected correctly to server'),
     err => console.log(err)
 );
 
+//-----Using express middleware framework-----
+var app = express();
 
+/* redirect traffic from http to https*/
+app.all('*', (req, res, next) => { //*wildcard for every path
+  if (req.secure) { //checks for property given when already https
+    return next();
+  } else {
+      console.log(`Redirecting to: https://${req.hostname}:${app.get('secPort')}${req.url}`);
+      res.redirect(301, `https://${req.hostname}:${app.get('secPort')}${req.url}`);
+      //301-permanent redirect.
+  }
+});
 
 // view engine setup/static files. This is front-end client
 app.set('views', path.join(__dirname, 'views'));
@@ -43,7 +54,7 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-//app.use(cookieParser('1234-5654-7654')); using cookie with session can cause errors
+app.use(cookieParser()); //using cookie with session can cause errors
 
 
 //tell express to use passport

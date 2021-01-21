@@ -22,7 +22,7 @@ router.post('/signup', (req, res) => {
   User.register(  //call as static method on user model-passport local mongoose
       new User({username: req.body.username}), //1st argument
       req.body.password, //2nd argument
-      (err, user) => { //3rd argument
+      (err, user) => { //3rd argument- doesn't return a promise so use callback
           if (err) {
               res.statusCode = 500; //internal server error
               res.setHeader('Content-Type', 'application/json');
@@ -60,7 +60,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   const token = authenticate.getToken({_id: req.user._id}); //then add token prop to response object for client
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
-  //res.cookie("cookiejwt", token) //send cookie with jwt to client
+  res.cookie("cookiejwt", token, {httpOnly: true, secure: true}); //send cookie with jwt to client
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 }); //token will now be in header of subsequent request from client
 

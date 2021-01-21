@@ -223,7 +223,7 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
         //check that requesting user id matches comments author id(objectId)
         if (campsite && campsite.comments.id(req.params.commentId).author.equals(req.user._id)) {
             campsite.comments.id(req.params.commentId).remove();
-                //save deletion and send back deleted campsite comment
+                //save deletion and send back campsite with new comment
                 campsite.save()
                 .then(campsite => {
                     res.statusCode = 200;
