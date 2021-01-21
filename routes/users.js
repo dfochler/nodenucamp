@@ -2,12 +2,13 @@ const express = require('express');
 const User = require('../models/user');
 const passport = require('passport');
 const authenticate = require('../authenticate');
+const cors = require('./cors');
 
 const router = express.Router();
 
 /* Verify an admin user to allow retrieval of users listing at /users endpoint */
 router
-.get('/', authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     User.find() //find all user docs
     .then(users => { // and send them in response
         res.statusCode = 200;
@@ -18,7 +19,7 @@ router
 })
 
 //allow anyone to access /users/signup endpoint
-router.post('/signup', (req, res) => { 
+router.post('/signup', cors.corsWithOptions, (req, res) => { 
   User.register(  //call as static method on user model-passport local mongoose
       new User({username: req.body.username}), //1st argument
       req.body.password, //2nd argument
@@ -54,7 +55,7 @@ router.post('/signup', (req, res) => {
 });
 
 //enable passport authentication on this route. handles logging in user(challenging and parsing credentials) and errors
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
   //only need to handle response if successful
   //issue token to user with method from auth module, pass object containing payload
   const token = authenticate.getToken({_id: req.user._id}); //then add token prop to response object for client
@@ -64,7 +65,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 }); //token will now be in header of subsequent request from client
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', cors.corsWithOptions, (req, res, next) => {
     res.clearCookie('cookiejwt');
     res.redirect('/');
   });
