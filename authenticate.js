@@ -29,8 +29,19 @@ exports.getToken = function(user) {
 
 //options used to configure the jwt strategy for passport
 const opts = {}; //json object for jwt strategy options
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();//server requesting to be sent token as a bearer token in header
-//req => req.cookies.cookiejwt; //method of extract object- specifies how to be extracted,
+
+ 
+/*const cookieExtractor = req => {
+    let jwt = null
+    if (req && req.cookies) {
+        jwt = req.cookies['jwt']
+    } return jwt
+}*/
+
+//opts.jwtFromRequest = cookieExtractor;
+//opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();//server requesting to be sent token as a bearer token in header
+opts.jwtFromRequest = req => req.cookies.cookiejwt; //method of extract object- specifies how to be extracted,
+
 opts.secretOrKey = config.secretKey;//supply jwt strategy with key(config module) used to sign
 
 //export strategy

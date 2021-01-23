@@ -6,6 +6,7 @@ const cors = require('./cors');
 //--gives access to express routing methods to create URLs and handle http requests
 const campsiteRouter = express.Router(); 
 
+//cors lets anyone access the route, options adds limitations
 campsiteRouter.route('/') //ENDPOINTS
 //Mongoose methods will always return a promise *daisy chain then catch methods
 .options(cors.corsWithOptions, (req, res) => res.sendStatus(200))//preflight request. http options method

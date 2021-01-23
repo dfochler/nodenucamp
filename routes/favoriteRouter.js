@@ -1,6 +1,6 @@
 const express = require('express');
 const Favorite = require('../models/favorite');
-const Campsite = require('../models/campsite');
+//const Campsite = require('../models/campsite');
 const authenticate = require('../authenticate');
 const cors = require('./cors');
 
@@ -49,7 +49,7 @@ favoriteRouter.route('/')
                     res.json(favorite);
                     })
                 .catch(err => next(err));
-            }  
+            };  
     })
     .catch(err => next(err));
 })
